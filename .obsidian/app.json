@@ -1,0 +1,15 @@
+{
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "daily",
+  "attachmentFolderPath": "attachments",
+  "showLineNumber": false,
+  "foldHeading": true,
+  "foldIndent": true,
+  "showFrontmatter": false,
+  "showUnsupportedFiles": true,
+  "useMarkdownLinks": false,
+  "useTab": false,
+  "tabSize": 2,
+  "promptDelete": false
+}

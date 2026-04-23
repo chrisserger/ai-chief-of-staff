@@ -32,7 +32,7 @@ Your AI-powered executive operating system. An AI partner that runs as your EA, 
 ### 1. Install prerequisites
 
 **Required:**
-- **Claude Code CLI** — Install from [claude.ai/claude-code](https://claude.ai/claude-code). You use Claude Code in a **terminal** (not the Claude desktop app). Any terminal works: [Warp](https://www.warp.dev/) (recommended, approved IDE), VS Code terminal, iTerm, or the built-in macOS Terminal.
+- **Claude Code CLI** — Install using the [Global Solutions installer](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0AU8DXM71R) (Canvas `F0AU8DXM71R`). One command, one Google sign-in, done. You use Claude Code in a **terminal** (not the Claude desktop app). Any terminal works: [Warp](https://www.warp.dev/) (recommended, approved IDE), VS Code terminal, iTerm, or the built-in macOS Terminal.
 - **Obsidian** — [obsidian.md](https://obsidian.md/) — this is where you VIEW everything Claude builds. Connected wiki with backlinks, graph view, and search.
 
 **Recommended:**
@@ -150,8 +150,9 @@ Claude asks about your scope during onboarding and configures accordingly.
 | **Salesforce CLI (Org62)** | Pull forecast dashboards, DSR reports, pipeline data | [docs/org62-setup.md](docs/org62-setup.md) |
 
 Internal Slack Canvas guides:
-- **Slack MCP:** Canvas `F09A59TJF08` — "Connect Claude Code to Slack"
-- **Google Workspace API:** Canvas `F0ASP7X0S5R` — "Connect Claude Code to Google Workspace"
+- **Installing Claude Code:** Canvas [`F0AU8DXM71R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0AU8DXM71R) — Global Solutions installer (macOS / Linux / Windows)
+- **Slack MCP:** Canvas [`F09A59TJF08`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F09A59TJF08) — "Connect Claude Code to Slack"
+- **Google Workspace API:** Canvas [`F0ASP7X0S5R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0ASP7X0S5R) — "Connect Claude Code to Google Workspace"
 
 ### Phase 2 (add when ready)
 

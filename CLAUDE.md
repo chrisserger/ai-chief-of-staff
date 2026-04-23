@@ -44,15 +44,18 @@ Check if Slack MCP is available (try `slack_search_users` for their name). If it
 
 If Slack MCP isn't connected yet, say: "Slack integration isn't set up yet — that's fine, we'll add it later. For now I'll work from what you tell me directly." See `docs/slack-mcp-setup.md` for setup instructions. Note in TOOLS.md that Slack is pending.
 
-### Step 6: Create Active Board
+### Step 6: Granola check
+Check if Granola is installed by looking for the cache file: `~/Library/Application Support/Granola/cache-v6.json`. If it exists, Granola is working — tell the user their meetings will be auto-imported. If not, suggest installing it from granola.ai — see `docs/granola-setup.md`.
+
+### Step 7: Create Active Board
 Ask: "Do you have a Slack Canvas you use as a to-do list? If not, I'll create one for you."
 - If they have one: get the Canvas ID and wire it into CLAUDE.md and TOOLS.md
 - If not: create a new Canvas via `slack_create_canvas` with sections: This Week, People/Team, Operations, Deals/Accounts, Strategic/Longer Term, Waiting On
 
-### Step 7: Generate first daily note
+### Step 8: Generate first daily note
 Create today's daily note in `daily/YYYY-MM-DD.md` using the template. If calendar data is available, populate the schedule. If not, just create the structure.
 
-### Step 8: Confirm and explain
+### Step 9: Confirm and explain
 Tell them what just happened and what to expect:
 
 > "You're live. Here's how this works day to day:"
@@ -62,7 +65,7 @@ Tell them what just happened and what to expect:
 > - "**Everything connects.** Customer intel goes to customer files. Deal context goes to deal files. People notes go to people files. You never have to organize anything."
 > - "**Just talk to me.** Voice-to-text is fine. I clean up the grammar."
 
-### Step 9: Clean up
+### Step 10: Clean up
 Delete this entire "First Run" section from CLAUDE.md — it's done and shouldn't run again.
 
 ---

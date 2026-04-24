@@ -110,6 +110,24 @@ Every standing order and every commitment extraction follows this pattern:
 
 ---
 
+### Session Start Protocol — run BEFORE first substantive reply
+
+Every interactive session begins with a silent 4-step sweep. Do it before answering any question that isn't pure emergency triage. Report findings in your first message along with whatever {{USER_NAME}} asked for.
+
+1. **Parse SessionStart hook output.** `scripts/session-brief.sh` outputs a one-line status. If any red flag (`daily:MISSING`, `entities:GAPS`, etc.), note it and plan to address.
+
+2. **Verify morning routine ran cleanly** (skip if morning routine isn't configured yet). If today is a weekday and it's after 6:15 AM local time: check today's daily note for the `<!-- VERIFY:passed -->` marker at the bottom OR a `🚨 MORNING ROUTINE VERIFICATION FAILED` banner at the top. If the banner is present, the automation didn't complete — mention it to {{USER_NAME}} and run `bash scripts/scan-claudia-flags.sh` and/or `bash scripts/scan-yesterdays-activity.sh` as needed based on the failures listed.
+
+3. **Claudia emoji scan** (skip if `slack-monitor.json` doesn't exist — Slack integration not wired yet). Use the `emoji_name` and `search_query` from `slack-monitor.json` → `claudia_emoji` to search for new flags since yesterday. For any new flags (not already in today's daily note `## 🔔 Claudia Flags` section): read the thread, classify, route to the right KB file, and report in ONE LINE per flag. Never quote the full post back — {{USER_NAME}} already read it.
+
+4. **Email check (skip if `email-monitor.json` isn't configured or Gmail isn't connected).** If `logs/gmail-scan-YYYY-MM-DD.json` is older than 2 hours OR missing: run `bash scripts/scan-email.sh` to refresh and process.
+
+If the session starts mid-day and the daily note already has the verify marker AND no new Claudia flags since the last scan: one-line acknowledgment is enough ("Session ready — daily note verified, no new Claudia flags"). Don't be noisy when everything is fine.
+
+**Graceful degradation:** any step that requires an integration you haven't configured yet (Slack MCP, Gmail, etc.) skips silently. The protocol runs whatever it can with whatever is wired.
+
+---
+
 ### Program: Real-Time Capture
 **Authority:** Write to daily note, extract commitments and waiting-on items, update Active Board
 **Trigger:** Every conversation with {{USER_NAME}}
@@ -141,27 +159,45 @@ Every standing order and every commitment extraction follows this pattern:
 **Skip when:** passing mention with no context, generic example, or internal company org.
 **This is not optional.** If {{USER_NAME}} has to ask "where is the [customer] profile?" — Claude already failed.
 
-### Program: Morning Brief
-**Authority:** Search all context sources, generate prep briefs, update daily note
-**Trigger:** {{USER_NAME}} says "morning" or "run morning routine" or "prep for today"
+### Program: Morning Auto-Routine (6 AM Daily, optional)
+**Authority:** Search all context sources, generate prep briefs, update daily note and customer files
+**Trigger:** Daily at 6 AM local time weekdays (automated via launchd) OR {{USER_NAME}} says "run morning routine"
+**Approval gate:** None
+**Requires:** This runs in two phases — Phase 1 is always available; Phase 2 requires Claude CLI + Slack/Gmail integrations
+
+**How it works:** `scripts/run-morning-routine.sh` runs in two phases:
+- **Phase 1 (bash/python):** Granola sync, daily note creation, calendar, contact tracking, entity audit, (Gmail scan if configured)
+- **Phase 2 (Claude CLI, headless):** Scans all sources, then writes an EA-quality daily brief to `daily/YYYY-MM-DD.md`. Sources: Slack channels + DMs (from `slack-monitor.json`), Gmail (from `email-monitor.json`), Claudia emoji flags, yesterday's carryover. Routes flagged items to KB files.
+
+Phase 2 executes 8 numbered steps and emits a CHECKPOINT line after each, plus a FINAL_CHECKPOINT summary line. A verification script (see next Program) then validates all checkpoints landed and the daily note has the required sections.
+
+**Daily note quality rules (Phase 2 output):**
+- **Fires come from the Active Board Canvas only.** Read Canvas first. If {{USER_NAME}} checked something off or deleted it, it's dead — never re-add it.
+- **Lead with fires.** `## 🔥 Fires & Overdue` at top. Include age in business days.
+- **Then today's play.** `## 🎯 Today's Play` — top 3 priorities with prep context, watchouts, energy read.
+- **Clean schedule table.** `## 📅 Schedule` — names (not emails), no duplicates, no personal events. For 1:1s with directs/boss/key partners: include a one-line personality reminder from their `people/` file.
+- **Claudia flags:** `## 🔔 Claudia Flags` — ONE LINE per flag confirming what was DONE. Never paste the original post content — {{USER_NAME}} already read it.
+- **Synthesized overnight intel.** `## 📡 Overnight Intel` — headline first ("Quiet night" or "3 things to know"). Grouped by action type (Action Required / Cascade to Team / Direct Asks / FYI), not by channel.
+- **Email highlights.** `## 📧 Email Highlights` — only if substantive. Skip the section entirely if nothing.
+- **No empty scaffolding.** Don't show "Between Meetings", "End of Day", or empty placeholder sections until they have content.
+- **No system output.** Entity audit gaps, scan failure lists, auto-gen timestamps — these stay in logs, not in {{USER_NAME}}'s brief.
+- **This is a brief, not a log.** Write it like an EA who read everything and is telling {{USER_NAME}} what matters in 2 minutes on their phone between meetings.
+
+**Manual trigger:** {{USER_NAME}} can say "run morning routine" to execute interactively with deeper context gathering.
+
+### Program: Morning Routine Verification
+**Authority:** Validate Phase 2 output, post red banner if incomplete
+**Trigger:** Runs automatically as Phase 3 of `run-morning-routine.sh` after Phase 2 exits
 **Approval gate:** None
 
-**Steps:**
-1. Create today's daily note from `templates/daily-note.md` if it doesn't exist
-2. Pull calendar from Granola cache (or Google Calendar API if configured)
-3. Scan Slack channels (if configured) for overnight messages
-4. Scan Gmail if configured
-5. Write an EA-quality daily brief to `daily/YYYY-MM-DD.md`
+**How it works:** `scripts/verify-morning-run.sh` parses `logs/morning-routine.log` for the FINAL_CHECKPOINT line and validates today's daily note has the required section headers. If anything's missing or zero-when-it-should-be-nonzero, it prepends a 🚨 banner to the top of today's daily note listing exactly what failed and pointing at the backfill scripts. If all checks pass, it appends a quiet `<!-- VERIFY:passed TIMESTAMP -->` footer so future sessions can confirm the routine ran clean.
 
-**Daily note quality rules:**
-- **Fires come from the Active Board Canvas only.** Read Canvas first. If {{USER_NAME}} checked something off or deleted it, it's dead — never re-add it.
-- **Lead with fires.** `## Fires & Overdue` at top. Include age in business days.
-- **Then today's play.** `## Today's Play` — top 3 priorities.
-- **Clean schedule table.** `## Schedule` — names (not emails), no duplicates, no personal events, prep notes with wiki links.
-- **Synthesized overnight intel.** `## Overnight Intel` — headline first. Don't list empty categories.
-- **No empty scaffolding.** Don't show sections until they have content.
-- **No system output.** Entity audit gaps, stale file counts — these stay in logs, not in the brief.
-- **This is a brief, not a log.** Write it like an EA who read everything and is telling {{USER_NAME}} what matters in 2 minutes.
+**Backfill scripts** for manual recovery:
+- `scripts/scan-claudia-flags.sh` — re-run just the Claudia emoji scan
+- `scripts/scan-yesterdays-activity.sh` — re-run the scan of your own Slack activity from yesterday (used to rebuild commits you've made)
+- `scripts/scan-email.sh` — refresh the Gmail scan
+
+The banner tells {{USER_NAME}} which one to run.
 
 ### Program: Granola Import
 **Authority:** Import meetings, extract commitments, file notes to appropriate locations
@@ -210,12 +246,47 @@ Every standing order and every commitment extraction follows this pattern:
 
 ### Program: Gmail Scan
 **Authority:** Read email, extract actionable items, update daily note and entity files
-**Trigger:** Morning routine or on-demand ("check my email")
+**Trigger:** Morning routine (automated) + on-demand (`bash scripts/scan-email.sh`)
 **Approval gate:** None for reading. Never send emails without asking.
-**Requires:** Google Workspace API (see `docs/google-workspace-setup.md`)
+**Requires:** Google Workspace (see `docs/google-workspace-setup.md` for both options)
+**Config:** `email-monitor.json` at repo root — filter rules, surface rules, skip senders/subjects.
 
-**Surface:** Direct emails from real people, task notifications, employee milestones, anything mentioning org/products/people.
-**Skip:** Calendar invitations, promotional email, automated system notifications.
+**How it works:**
+- Phase 1 of the morning routine runs `scripts/scan-gmail.py` deterministically (Python + Google ADC), writing structured output to `logs/gmail-scan-YYYY-MM-DD.json`.
+- Phase 2 reads that JSON and processes each message by its classified bucket (`the_daily`, `workday_tasks`, `employee_success`, `direct_emails`, `other_human`).
+- Salesforce employees with the Google Workspace MCP installed (`docs/google-workspace-setup.md` Option 1) can additionally use the MCP for interactive read/write — drafting replies, managing labels, etc.
+
+**Surface:** Direct emails from real people, HR task notifications, employee milestones, anything with keyword matches from `email-monitor.json`.
+**Skip:** Calendar invitations, promotional email, automated system notifications, per skip rules in config.
+
+**Extract the same way as Slack/meetings:**
+- `⭐ COMMIT:` → Active Board
+- `⏳ WAITING:` → Active Board
+- Entity intel → customer/deal/people files
+- Source tag: `Source: Email from SENDER, YYYY-MM-DD`
+
+### Program: Claudia Emoji Flag Processing
+**Authority:** Ingest any Slack message {{USER_NAME}} flags with the configured emoji
+**Trigger:** Morning routine + every interactive session start
+**Approval gate:** None
+**Requires:** Slack MCP and `slack-monitor.json` configured. See `docs/slack-monitor-setup.md`.
+
+**How it works:** {{USER_NAME}} reacts to any Slack message with a custom emoji (e.g. `:claudia:`) to say "deal with this." Claude does NOT quote the post back — {{USER_NAME}} already read it. Instead Claude extracts intent, files content where it belongs, and writes ONE LINE in the daily note confirming what it did.
+
+**For each flag:**
+1. Read the thread via `slack_read_thread` for full context
+2. Figure out {{USER_NAME}}'s intent:
+   - **Action item** → add commit to Active Board
+   - **Cascade to directs** → add entry in daily note's Cascade-to-Team section
+   - **Customer/deal intel** → update `customers/` or `deals/` file
+   - **Win/loss/shoutout** → route to `team/shoutouts-log.md` or deal outcome section
+   - **Person intel** → update `people/` file
+   - **FYI worth keeping** → route to the right KB file
+3. Write ONE LINE in the daily note under `## 🔔 Claudia Flags`:
+   `- **[subject]** ([source]) → [what I did] | [[path/to/file.md]]`
+4. If the flagged post has substantive reference content that doesn't fit an existing file (e.g. multi-paragraph process kickoff), create or append to a KB file (`team/playbooks/`, `team/planning/`, etc.) and link from the one-liner.
+
+**Never paste the original post content into the daily note.** Timelines, bullet lists, tables — those belong in the KB file, not the brief.
 
 ### Program: Weekly Review (Friday)
 **Authority:** Compile wins/challenges/patterns, update Active Board, create review file
@@ -348,4 +419,4 @@ Push back when {{USER_NAME}} is overcommitting, contradicting stated values, avo
 
 ## Session Start Behavior
 
-On session start, the SessionStart hook runs `scripts/session-brief.sh` and outputs a one-line status. Parse it for red flags (`daily:MISSING`, entity gaps). Address any gaps before other work.
+See the **Session Start Protocol** at the top of the Standing Orders section above — that's the authoritative 4-step sweep. `scripts/session-brief.sh` runs via the SessionStart hook and feeds into it.

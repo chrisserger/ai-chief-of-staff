@@ -5,3 +5,23 @@ __pycache__/
 .DS_Store
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
+
+# Generated logs and scan outputs
+logs/
+*.log
+
+# Gmail scan outputs (contain email bodies — never check in)
+gmail-scan-*.json
+
+# Granola / Claude API local caches
+.transcript_cache.json
+.commitment_cache.json
+
+# Meeting transcript sidecar files (written by scripts/import-granola.py)
+daily/transcripts/
+
+# Your private Slack monitor config (user builds this during onboarding; never ship)
+slack-monitor.json
+
+# Private implementation detail — not shipped with the template
+command-center/

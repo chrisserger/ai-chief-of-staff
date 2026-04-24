@@ -1,0 +1,74 @@
+{
+  "_comment": "Gmail scan config. Used by scripts/scan-gmail.py and the Phase 2 Gmail processing step of the morning routine. Customize before running — see docs/google-workspace-setup.md.",
+
+  "description": "Gmail scan config. Defines what to surface, what to skip, and how to route email content.",
+  "gmail_user": "<your-email>@<your-domain>",
+  "python_path": "/usr/bin/python3",
+  "api_method": "Google ADC (Application Default Credentials)",
+  "credentials_path": "~/.config/gcloud/application_default_credentials.json",
+
+  "query_filter": "newer_than:1d -category:promotions -category:social -in:drafts -label:sent -filename:ics -from:calendar-notification@google.com -subject:\"invitation\" -subject:\"accepted\" -subject:\"declined\" -subject:\"updated invitation\" -subject:\"canceled event\"",
+
+  "surface_rules": {
+    "the_daily": {
+      "_comment": "Example: newsletter from your corporate internal communications team. Adjust 'from' and 'subject_contains' to match yours.",
+      "from": "<your-corp-comms-sender>@<your-domain>",
+      "subject_contains": "The Daily",
+      "action": "Extract corp announcements, certifications, deadlines, events. Write to daily note.",
+      "parse_note": "HTML-only — no text/plain part. Strip HTML tags with regex before extracting content."
+    },
+    "workday_tasks": {
+      "_comment": "Example: your HR system sender (Workday, BambooHR, etc.). Pending approvals are time-sensitive — treat as commitments.",
+      "from": "<your-hr-system>@<your-domain>",
+      "action": "Surface pending approvals and action items. Flag as commitments if time-sensitive.",
+      "priority": "high"
+    },
+    "employee_success": {
+      "_comment": "Example: HR announcements about team milestones/anniversaries. Cross-reference names to your people/ files.",
+      "from": "<your-hr-announcements>@<your-domain>",
+      "action": "Surface work anniversaries and milestones for your direct reports and extended team. Good for 1:1 openers and shoutouts.",
+      "people_match": "Cross-reference names against people/ files and people/00-ORG.md"
+    },
+    "direct_emails": {
+      "description": "Emails from real people (not systems) that mention your org, products, or team members",
+      "action": "Surface with sender context. Extract entity intel if relevant.",
+      "keywords": ["<your-product-1>", "<your-product-2>", "<your-team-name>"]
+    }
+  },
+
+  "skip_senders": {
+    "description": "Always skip these senders — covered elsewhere or noise",
+    "senders": [
+      "calendar-notification@google.com",
+      "noreply@",
+      "no-reply@",
+      "donotreply@",
+      "notifications@github.com"
+    ]
+  },
+
+  "skip_subjects": {
+    "description": "Skip emails matching these subject patterns",
+    "patterns": [
+      "invitation:",
+      "accepted:",
+      "declined:",
+      "updated invitation:",
+      "canceled event:"
+    ]
+  },
+
+  "output": {
+    "daily_note_section": "## 📧 Email Highlights",
+    "format": "Group by: Action Required > People/Team > FYI. Include sender, subject, one-line summary. Link entity intel to appropriate files.",
+    "commitment_extraction": "Same rules as Slack: ⭐ COMMIT: → Active Board, ⏳ WAITING: → Active Board",
+    "source_tag": "Source: Email from SENDER, YYYY-MM-DD"
+  },
+
+  "scan_settings": {
+    "lookback": "newer_than:1d",
+    "max_results": 50,
+    "morning_routine": true,
+    "interactive_on_demand": true
+  }
+}

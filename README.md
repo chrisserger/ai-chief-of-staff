@@ -2,7 +2,7 @@
 
 Your AI-powered executive operating system. An AI partner that runs as your EA, pattern-spotter, and career coach — built on [Claude Code](https://claude.ai/claude-code) and [Obsidian](https://obsidian.md/).
 
-> **Note:** This is a private repo for Salesforce employees. If you're outside Salesforce and somehow have access, the system is generic enough to work anywhere — but the setup guides reference internal tools.
+> **Note:** Public repo. Generic enough to work anywhere, but some setup guides reference Salesforce-internal tools (Org62, SF AI Stack Marketplace, internal Slack Canvases). Those are called out in the Integrations table — non-Salesforce users have fallback paths for everything.
 
 ---
 
@@ -95,18 +95,19 @@ Beyond the core daily workflow, here's what's possible once integrations are con
 | **Read Slack channels** | Scan overnight messages, extract action items, flag things for your team | Slack MCP |
 | **Send Slack messages** | Draft and send messages (always asks first), schedule messages | Slack MCP |
 | **Read/write Slack Canvases** | Manage your Active Board, update shared docs | Slack MCP |
-| **Scan Gmail** | Surface actionable emails, skip noise, extract commitments | Google Workspace API |
-| **Read/write Google Docs** | Create documents, read shared docs | Google Workspace API |
-| **Read/write Google Sheets** | Pull forecast data, create spreadsheets | Google Workspace API |
-| **Build Google Slides** | Create on-brand presentations from conversation | Google Workspace API |
+| ✅ **Scan Gmail** | Surface actionable emails, skip noise, extract commitments. Runs in Phase 1 of the morning routine. | Google Workspace (ADC or MCP) |
+| **Read/write Google Docs** | Create documents, edit in place, manage comments | Google Workspace MCP (SF) or ADC |
+| **Read/write Google Sheets** | Pull forecast data, create spreadsheets, format ranges | Google Workspace MCP (SF) or ADC |
+| **Build Google Slides** | Create on-brand presentations from conversation (incl. 2026 Salesforce corp template) | Google Workspace MCP (SF) |
+| **Calendar** | View and manage events, check free/busy, meeting prep | Google Workspace MCP (SF) or ADC |
 | **Pull Org62 dashboards** | Forecast pipeline, product ACV, DSR workload — live data | Salesforce CLI |
 | **Generate images** | Create diagrams, charts, visuals — saved directly to your vault | Nano Banana MCP |
 | **Create diagrams** | Architecture diagrams, org charts, flow diagrams | Draw.io MCP |
 | **Semantic search** | Search your entire knowledge base by meaning, not just keywords | Pinecone |
-| **Import meetings** | Pull Granola transcripts, extract commitments, file notes | Granola (local) |
+| **Import meetings** | Pull Granola transcripts, extract commitments, file notes. Transcripts saved as sidecars (daily note stays scannable). | Granola (local) |
 | **Build personality profiles** | DISC, MBTI, Working Genius, temperament from meeting data | Granola transcripts |
 | **Ghost-write** | Draft Slack messages, all-hands scripts, emails in your voice | Voice profile (built over time) |
-| **Automate morning routine** | Auto-generate daily brief at 6 AM every weekday | launchd + Slack + Gmail |
+| ✅ **Automate morning routine** | Auto-generates daily brief at 6 AM every weekday. 3 phases: deterministic scan → Claude synthesis → verification with red-banner failure mode. | launchd + Claude CLI |
 
 ---
 
@@ -118,7 +119,7 @@ Don't try to do everything at once:
 |-------|------|------|
 | **Day 1** | Daily notes + meeting capture + commitment tracking | Setup day |
 | **Week 1** | Slack monitoring + Active Board + entity extraction | After Slack MCP is connected |
-| **Month 1** | Morning routine automation + personality profiles + weekly reviews | When comfortable |
+| **Month 1** | Morning routine automation with verification + manual backfill scripts + personality profiles + weekly reviews | When comfortable |
 | **Phase 2** | Gmail scan + Org62 dashboards + Pinecone search + Google Slides | When you want more |
 
 ---
@@ -141,28 +142,31 @@ Claude asks about your scope during onboarding and configures accordingly.
 | Integration | What It Does | Setup Guide |
 |-------------|-------------|-------------|
 | **Slack MCP** | Read channels, send messages, manage Canvases (Active Board) | [docs/slack-mcp-setup.md](docs/slack-mcp-setup.md) |
+| **Slack Monitor config** | `slack-monitor.json` at repo root — channels/DMs/Active Board/emoji config. User-built during onboarding; never shipped. | [docs/slack-monitor-setup.md](docs/slack-monitor-setup.md) |
 | **Granola** | Auto-import meeting transcripts — no config needed if installed | [docs/granola-setup.md](docs/granola-setup.md) |
 
-### Salesforce-specific
+### Salesforce-specific (preferred paths for SF employees)
 
 | Integration | What It Does | Setup Guide |
 |-------------|-------------|-------------|
+| **Google Workspace MCP (SF AI Stack)** | Gmail, Calendar, Drive, Docs, Sheets, Slides — read + write, single OAuth, security approved. Primary path for Salesforce employees. | [docs/google-workspace-setup.md](docs/google-workspace-setup.md) (Option 1) |
 | **Salesforce CLI (Org62)** | Pull forecast dashboards, DSR reports, pipeline data | [docs/org62-setup.md](docs/org62-setup.md) |
 
 Internal Slack Canvas guides:
 - **Installing Claude Code:** Canvas [`F0AU8DXM71R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0AU8DXM71R) — Global Solutions installer (macOS / Linux / Windows)
 - **Slack MCP:** Canvas [`F09A59TJF08`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F09A59TJF08) — "Connect Claude Code to Slack"
-- **Google Workspace API:** Canvas [`F0ASP7X0S5R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0ASP7X0S5R) — "Connect Claude Code to Google Workspace"
+- **Google Workspace MCP:** `#C09BGJDQPAR` — Newton Wong's announcement post (2026-04-24) with install walk-through and demo video
+- **Google Workspace API (legacy ADC):** Canvas [`F0ASP7X0S5R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0ASP7X0S5R) — fallback path
 
-### Phase 2 (add when ready)
+### Phase 2 (add when ready — works for anyone)
 
 | Integration | What It Does | Setup Guide |
 |-------------|-------------|-------------|
-| **Google Workspace API** | Gmail, Calendar, Drive, Docs, Sheets, Slides | [docs/google-workspace-setup.md](docs/google-workspace-setup.md) |
+| **Google Workspace via Python + ADC** | Gmail + Calendar read via `scripts/scan-gmail.py`. Works outside Salesforce. Required for the Phase 1 Gmail scan in the morning routine. | [docs/google-workspace-setup.md](docs/google-workspace-setup.md) (Option 2) |
 | **Nano Banana (image gen)** | Generate images and diagrams via Gemini models | [docs/mcp-extras-setup.md](docs/mcp-extras-setup.md) |
 | **Draw.io** | Create/edit diagrams programmatically | [docs/mcp-extras-setup.md](docs/mcp-extras-setup.md) |
 | **Pinecone** | Semantic vector search across your knowledge base | [docs/mcp-extras-setup.md](docs/mcp-extras-setup.md) |
-| **Morning Routine Automation** | Auto-generates your daily brief at 6 AM | Ask Claude to set it up once Slack + Gmail are connected |
+| **Morning Routine Automation** | Auto-generates your daily brief at 6 AM, with verification + manual backfill scripts (`verify-morning-run.sh`, `scan-claudia-flags.sh`, `scan-yesterdays-activity.sh`, `scan-email.sh`) | Ask Claude to set it up once Slack + Gmail are connected |
 | **Personality Profiles** | DISC/MBTI/Working Genius for your directs | Ask Claude: "build a personality profile for [name]" |
 
 ---
@@ -182,15 +186,18 @@ ai-chief-of-staff/
 ├── CLAUDE.md              — The operating system (onboarding + standing orders)
 ├── USER.md                — Personal context template
 ├── TOOLS.md               — Toolkit reference (MCPs, scripts, data sources)
+├── email-monitor.json     — Gmail scan config (edit to your setup)
+├── slack-monitor.json     — (you build this during onboarding; never shipped)
 ├── daily/                 — One note per day (source of truth)
 ├── people/                — Org chart, 1:1 docs, stakeholders
 ├── deals/                 — Deal context and tracking
 ├── customers/             — Customer account files
 ├── products/              — Product/team overviews
 ├── projects/              — Initiatives and special projects
-├── team/                  — Weekly reviews, planning
+├── team/                  — Weekly reviews, planning, playbooks, shoutouts log
+├── analysis/              — Historical analysis and pattern docs
 ├── templates/             — File templates (Claude copies these)
-├── scripts/               — Automation scripts
+├── scripts/               — Automation scripts (morning routine, verify, scan backfills, etc.)
 ├── examples/              — Sample pre-fill files
 └── docs/                  — Integration setup guides
 ```

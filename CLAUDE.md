@@ -2,7 +2,7 @@
 
 ## First Run — Complete Before Anything Else
 
-**If `daily/` is empty and this file still has `{{PLACEHOLDER}}` values, this is a first run. Execute the onboarding flow below — do NOT skip any step.**
+**If `daily/` is empty and this file still has `{{PLACEHOLDER}}` values, this is a first run. Execute the onboarding flow below IMMEDIATELY — do NOT wait for the user to ask, do NOT skip any step. The SessionStart hook will output `FIRST_RUN` to confirm this state. Start with Step 0 as soon as you see it.**
 
 ### Step 0: Pre-fill check
 Look for any `.md` files in the project root that aren't CLAUDE.md, USER.md, TOOLS.md, or README.md (e.g., `alex-chen.md`, `jordan-park.md`). These are pre-fill files with known org context seeded by whoever set up this kit. If found, read them first — they contain org chart, directs, product lines, and setup notes. Use this data to pre-populate everything instead of asking questions the system already knows.

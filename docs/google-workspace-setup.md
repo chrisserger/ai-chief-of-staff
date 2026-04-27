@@ -41,23 +41,29 @@ If you get `fatal: could not read Username for git.soma.salesforce.com` during i
 
 ### Internal Slack reference
 
-Newton Wong's announcement of this plugin is in `#C09BGJDQPAR` — good source of truth for the latest capability list and any install updates.
+Newton Wong's announcement of this plugin: [post in #ai-builder-community-mcp](https://salesforce-internal.slack.com/archives/C09BGJDQPAR/p1777014918275559) — good source of truth for the latest capability list and any install updates.
 
 ---
 
-## Option 2 (works anywhere): Python + Google ADC
+## Option 2 (non-Salesforce users / headless automation): Python + Google ADC
 
-For non-Salesforce users, for headless automation, or as a fallback path. Uses Google Application Default Credentials and a small Python wrapper (`scripts/scan-gmail.py`) that reads `email-monitor.json` at the repo root.
+> **Salesforce employees:** You do NOT need this for interactive work. The Google Workspace MCP (Option 1 above) handles Gmail, Calendar, Drive, Docs, Sheets, and Slides without any Google Cloud project setup. Option 2 is only needed if you want to run the automated morning routine's Phase 1 Gmail scan (headless cron job), or if you're not at Salesforce.
+
+Uses Google Application Default Credentials and a small Python wrapper (`scripts/scan-gmail.py`) that reads `email-monitor.json` at the repo root.
 
 ### Prerequisites
 
-- A Google Cloud project (free tier works)
+- A Google Cloud project with an **OAuth client ID** you own (free tier works) — see "Why your own client ID?" below
 - `gcloud` CLI installed — [install guide](https://cloud.google.com/sdk/docs/install)
 - Your Google Workspace account
 
+### Why your own client ID?
+
+Google is [deprecating several scopes for the default `gcloud` client ID](https://cloud.google.com/docs/authentication/troubleshoot-adc#access_blocked_when_using_scopes). Gmail, Calendar, Drive, and Sheets scopes will be blocked unless you supply your own OAuth client. Creating one takes 2 minutes and is free.
+
 ### Setup Steps
 
-**1. Create a Google Cloud project.** [console.cloud.google.com](https://console.cloud.google.com/) — new project or reuse an existing one.
+**1. Create a Google Cloud project** (skip if you already have one). [console.cloud.google.com](https://console.cloud.google.com/) — new project or reuse an existing one.
 
 **2. Enable the APIs.**
 
@@ -71,23 +77,30 @@ gcloud services enable \
   slides.googleapis.com
 ```
 
-**3. Configure the OAuth consent screen.**
+**3. Create an OAuth client ID.**
+- Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**
+- Application type: **Desktop app**
+- Name it anything (e.g., "AI Chief of Staff CLI")
+- Download the JSON — save it somewhere safe (e.g., `~/.config/gcloud/client_secret.json`)
+
+**4. Configure the OAuth consent screen.**
 - Go to **APIs & Services → OAuth consent screen**
 - Choose **Internal** (if using a Workspace account) or **External**
 - Fill in the app name (e.g., "AI Chief of Staff")
 - Add the scopes for Gmail, Calendar, Drive, Docs, Sheets, Slides
 - Add yourself as a test user (if External)
 
-**4. Authenticate with ADC.**
+**5. Authenticate with ADC using your own client ID.**
 
 ```bash
 gcloud auth application-default login \
-  --scopes="https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/calendar.readonly,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly,https://www.googleapis.com/auth/presentations.readonly"
+  --client-id-file="$HOME/.config/gcloud/client_secret.json" \
+  --scopes="https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/calendar.readonly,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly,https://www.googleapis.com/auth/presentations.readonly"
 ```
 
-Credentials land at `~/.config/gcloud/application_default_credentials.json`.
+The `cloud-platform` scope is required by `gcloud` itself — without it the command errors out. Credentials land at `~/.config/gcloud/application_default_credentials.json`.
 
-**5. Install Python dependencies.**
+**6. Install Python dependencies.**
 
 ```bash
 python3 -m venv .venv
@@ -97,7 +110,7 @@ pip install google-auth google-auth-oauthlib google-api-python-client
 
 Alternatively, use system Python if it already has `google-auth` and `google-api-python-client` installed (the morning routine uses `/usr/bin/python3` by default on macOS).
 
-**6. Configure `email-monitor.json`.**
+**7. Configure `email-monitor.json`.**
 
 Edit `email-monitor.json` at the repo root:
 - `gmail_user`: your email
@@ -107,13 +120,13 @@ Edit `email-monitor.json` at the repo root:
 - `surface_rules.direct_emails.keywords`: products and org terms you care about
 - `skip_senders.senders`: noise sources to ignore
 
-**7. Verify it works.**
+**8. Verify it works.**
 
 ```bash
 /usr/bin/python3 scripts/scan-gmail.py --lookback 1d --json-only | head -30
 ```
 
-Should print a JSON block with `total_fetched`, `total_surfaced`, and a `messages[]` array. If you get `ADC not found`, re-run step 4.
+Should print a JSON block with `total_fetched`, `total_surfaced`, and a `messages[]` array. If you get `ADC not found`, re-run step 5.
 
 ---
 
@@ -122,9 +135,9 @@ Should print a JSON block with `total_fetched`, `total_surfaced`, and a `message
 - **Phase 1** of `scripts/run-morning-routine.sh` is deterministic (bash/python) and calls `scripts/scan-gmail.py` directly — **Option 2 (ADC) is required for Phase 1.** It produces `logs/gmail-scan-YYYY-MM-DD.json` that Phase 2 then reads.
 - **Phase 2** is the Claude CLI run. If you have Option 1 installed, Claude can additionally use the MCP tools for interactive write operations (drafting replies, managing labels, creating docs/slides). If you only have Option 2 configured, Phase 2 just reads the JSON Phase 1 wrote.
 
-**Recommendation for Salesforce employees:** install both. Option 1 for interactive work (writing, editing, creating), Option 2 for the headless cron job.
+**Recommendation for Salesforce employees:** Start with Option 1 only — it covers all interactive work. Add Option 2 later only if you set up the automated morning routine (Phase 1 needs headless Python access to Gmail).
 
-**Recommendation for everyone else:** Option 2 is enough. Everything the morning routine does works with it.
+**Recommendation for everyone else:** Option 2 is your path. Everything the morning routine does works with it.
 
 ---
 

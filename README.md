@@ -155,7 +155,7 @@ Claude asks about your scope during onboarding and configures accordingly.
 Internal Slack Canvas guides:
 - **Installing Claude Code:** Canvas [`F0AU8DXM71R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0AU8DXM71R) — Global Solutions installer (macOS / Linux / Windows)
 - **Slack MCP:** Canvas [`F09A59TJF08`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F09A59TJF08) — "Connect Claude Code to Slack"
-- **Google Workspace MCP:** `#C09BGJDQPAR` — Newton Wong's announcement post (2026-04-24) with install walk-through and demo video
+- **Google Workspace MCP:** [Newton Wong's announcement in #ai-builder-community-mcp](https://salesforce-internal.slack.com/archives/C09BGJDQPAR/p1777014918275559) (2026-04-24) — install walk-through and demo video
 - **Google Workspace API (legacy ADC):** Canvas [`F0ASP7X0S5R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0ASP7X0S5R) — fallback path
 
 ### Phase 2 (add when ready — works for anyone)

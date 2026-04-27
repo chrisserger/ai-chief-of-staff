@@ -5,6 +5,15 @@ cd "$(dirname "$0")/.." || exit 1
 TODAY=$(date +%Y-%m-%d)
 DOW=$(date +%A)
 
+# First-run detection — placeholders still in CLAUDE.md and daily/ empty
+if grep -q '{{PLACEHOLDER\|{{USER_NAME\|{{ACTIVE_BOARD' CLAUDE.md 2>/dev/null; then
+    DAILY_COUNT=$(find daily/ -name "*.md" -not -name ".*" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$DAILY_COUNT" -eq 0 ]; then
+        echo "$DOW $TODAY — FIRST_RUN: Execute onboarding flow in CLAUDE.md now"
+        exit 0
+    fi
+fi
+
 # Daily note check
 if [ -f "daily/${TODAY}.md" ]; then
     DAILY_STATUS="exists"

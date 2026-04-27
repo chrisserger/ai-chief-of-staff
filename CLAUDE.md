@@ -380,6 +380,48 @@ Workflow: Morning = open Obsidian daily note + check Active Board in Slack. All 
 
 ---
 
+## Slack Formatting — Messages vs Canvases
+
+**Messages and Canvases use DIFFERENT markup languages. Mixing them fails silently.**
+
+### Quick Reference
+
+| Feature | Message (mrkdwn) | Canvas (standard markdown) |
+|---|---|---|
+| Bold | `*text*` | `**text**` |
+| Italic | `_text_` | `*text*` |
+| Strikethrough | `~text~` | `~~text~~` |
+| Link | `<url\|text>` | `[text](url)` |
+| User mention | `<@UXXXX>` | `![](@UXXXX)` |
+| Channel mention | `<#CXXXX>` | `![](#CXXXX)` |
+| Headings | N/A | `# / ## / ###` |
+| Checklist | N/A | `- [ ] / - [x]` |
+| Table | N/A | Standard markdown tables (max 300 cells) |
+| Horizontal rule | N/A | `---` |
+| Image | N/A | `![alt](url)` (standalone line only) |
+| Code | `` `code` `` / ` ```block``` ` | Same |
+| Blockquote | `> text` | `> text` |
+
+### Canvas Spacing Rules (Mandatory)
+
+Every extra blank line in a Canvas renders as a visible empty paragraph. Canvases do NOT collapse whitespace like messages do.
+
+1. **One blank line between sections/elements** — NEVER more
+2. **No trailing blank lines** at end of content
+3. **No leading blank lines** at start of content
+4. **Lists need one blank line before the first item** for the parser to recognize them
+5. When appending with `section_id`, no leading `\n` — the API handles separation
+
+### Message-Specific
+
+- Escape `&` `<` `>` as `&amp;` `&lt;` `&gt;`
+- URLs auto-link; `<url>` for explicit, `<url|text>` for display text
+- Special mentions: `<!here>`, `<!channel>`, `<!everyone>`
+- Date formatting: `<!date^UNIX_TS^{date_pretty} at {time}|fallback>`
+- Messages collapse 3+ consecutive `\n` into roughly one blank line
+
+---
+
 ## Claude's Role & Style
 
 ### Partner Roles

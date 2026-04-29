@@ -2,7 +2,7 @@
 
 Your AI-powered executive operating system. An AI partner that runs as your EA, pattern-spotter, and career coach — built on [Claude Code](https://claude.ai/claude-code) and [Obsidian](https://obsidian.md/).
 
-> **Note:** Public repo. Generic enough to work anywhere, but some setup guides reference Salesforce-internal tools (Org62, SF AI Stack Marketplace, internal Slack Canvases). Those are called out in the Integrations table — non-Salesforce users have fallback paths for everything.
+> **Note:** Public repo. Works at any company. Some integrations (Org62, corporate MCP plugins) are optional and company-specific — setup guides call these out with fallback paths for everyone.
 
 ---
 
@@ -32,16 +32,16 @@ Your AI-powered executive operating system. An AI partner that runs as your EA, 
 ### 1. Install prerequisites
 
 **Required:**
-- **Claude Code CLI** — Install using the [Global Solutions installer](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0AU8DXM71R) (Canvas `F0AU8DXM71R`). One command, one Google sign-in, done. You use Claude Code in a **terminal** (not the Claude desktop app). Any terminal works: [Warp](https://www.warp.dev/) (recommended, approved IDE), VS Code terminal, iTerm, or the built-in macOS Terminal.
+- **Claude Code CLI** — Install from [claude.ai/claude-code](https://claude.ai/claude-code). One command, done. You use Claude Code in a **terminal** (not the Claude desktop app). Any terminal works: [Warp](https://www.warp.dev/), VS Code terminal, iTerm, or the built-in macOS Terminal.
 - **Obsidian** — [obsidian.md](https://obsidian.md/) — this is where you VIEW everything Claude builds. Connected wiki with backlinks, graph view, and search.
 
 **Recommended:**
-- **Granola** — [granola.ai](https://granola.ai/) — Meeting transcription. Already standard at Salesforce. If installed, Claude auto-imports your meeting transcripts — no setup required, it just finds them.
+- **Granola** — [granola.ai](https://granola.ai/) — Meeting transcription. If installed, Claude auto-imports your meeting transcripts — no setup required, it just finds them.
 
 ### 2. Clone this repo
 
 ```bash
-git clone https://github.com/chrisserger/ai-chief-of-staff.git my-chief-of-staff
+git clone https://github.com/<your-username>/ai-chief-of-staff.git my-chief-of-staff
 ```
 
 ### 3. Open it
@@ -96,11 +96,11 @@ Beyond the core daily workflow, here's what's possible once integrations are con
 | **Send Slack messages** | Draft and send messages (always asks first), schedule messages | Slack MCP |
 | **Read/write Slack Canvases** | Manage your Active Board, update shared docs | Slack MCP |
 | ✅ **Scan Gmail** | Surface actionable emails, skip noise, extract commitments. Runs in Phase 1 of the morning routine. | Google Workspace (ADC or MCP) |
-| **Read/write Google Docs** | Create documents, edit in place, manage comments | Google Workspace MCP (SF) or ADC |
-| **Read/write Google Sheets** | Pull forecast data, create spreadsheets, format ranges | Google Workspace MCP (SF) or ADC |
-| **Build Google Slides** | Create on-brand presentations from conversation (incl. 2026 Salesforce corp template) | Google Workspace MCP (SF) |
-| **Calendar** | View and manage events, check free/busy, meeting prep | Google Workspace MCP (SF) or ADC |
-| **Pull Org62 dashboards** | Forecast pipeline, product ACV, DSR workload — live data | Salesforce CLI |
+| **Read/write Google Docs** | Create documents, edit in place, manage comments | Google Workspace MCP or ADC |
+| **Read/write Google Sheets** | Pull forecast data, create spreadsheets, format ranges | Google Workspace MCP or ADC |
+| **Build Google Slides** | Create on-brand presentations from conversation | Google Workspace MCP |
+| **Calendar** | View and manage events, check free/busy, meeting prep | Google Workspace MCP or ADC |
+| **Pull CRM dashboards** | Forecast pipeline, product ACV, DSR workload — live data | Salesforce CLI (if you use Salesforce CRM) |
 | **Generate images** | Create diagrams, charts, visuals — saved directly to your vault | Nano Banana MCP |
 | **Create diagrams** | Architecture diagrams, org charts, flow diagrams | Draw.io MCP |
 | **Semantic search** | Search your entire knowledge base by meaning, not just keywords | Pinecone |
@@ -145,24 +145,18 @@ Claude asks about your scope during onboarding and configures accordingly.
 | **Slack Monitor config** | `slack-monitor.json` at repo root — channels/DMs/Active Board/emoji config. User-built during onboarding; never shipped. | [docs/slack-monitor-setup.md](docs/slack-monitor-setup.md) |
 | **Granola** | Auto-import meeting transcripts — no config needed if installed | [docs/granola-setup.md](docs/granola-setup.md) |
 
-### Salesforce-specific (preferred paths for SF employees)
+### Company-specific (optional)
 
 | Integration | What It Does | Setup Guide |
 |-------------|-------------|-------------|
-| **Google Workspace MCP (SF AI Stack)** | Gmail, Calendar, Drive, Docs, Sheets, Slides — read + write, single OAuth, security approved. Primary path for Salesforce employees. | [docs/google-workspace-setup.md](docs/google-workspace-setup.md) (Option 1) |
-| **Salesforce CLI (Org62)** | Pull forecast dashboards, DSR reports, pipeline data | [docs/org62-setup.md](docs/org62-setup.md) |
-
-Internal Slack Canvas guides:
-- **Installing Claude Code:** Canvas [`F0AU8DXM71R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0AU8DXM71R) — Global Solutions installer (macOS / Linux / Windows)
-- **Slack MCP:** Canvas [`F09A59TJF08`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F09A59TJF08) — "Connect Claude Code to Slack"
-- **Google Workspace MCP:** [Newton Wong's announcement in #ai-builder-community-mcp](https://salesforce-internal.slack.com/archives/C09BGJDQPAR/p1777014918275559) (2026-04-24) — install walk-through and demo video
-- **Google Workspace API (legacy ADC):** Canvas [`F0ASP7X0S5R`](https://salesforce.enterprise.slack.com/docs/T3X1CSHRN/F0ASP7X0S5R) — fallback path
+| **Google Workspace MCP** | Gmail, Calendar, Drive, Docs, Sheets, Slides — read + write, single OAuth. If your company offers a Google Workspace MCP plugin, this is the preferred path. | [docs/google-workspace-setup.md](docs/google-workspace-setup.md) (Option 1) |
+| **Salesforce CLI (Org62)** | Pull forecast dashboards, DSR reports, pipeline data (Salesforce CRM users) | [docs/org62-setup.md](docs/org62-setup.md) |
 
 ### Phase 2 (add when ready — works for anyone)
 
 | Integration | What It Does | Setup Guide |
 |-------------|-------------|-------------|
-| **Google Workspace via Python + ADC** | Gmail + Calendar read via `scripts/scan-gmail.py`. Works outside Salesforce. Required for the Phase 1 Gmail scan in the morning routine. | [docs/google-workspace-setup.md](docs/google-workspace-setup.md) (Option 2) |
+| **Google Workspace via Python + ADC** | Gmail + Calendar read via `scripts/scan-gmail.py`. Works anywhere. Required for the Phase 1 Gmail scan in the morning routine. | [docs/google-workspace-setup.md](docs/google-workspace-setup.md) (Option 2) |
 | **Nano Banana (image gen)** | Generate images and diagrams via Gemini models | [docs/mcp-extras-setup.md](docs/mcp-extras-setup.md) |
 | **Draw.io** | Create/edit diagrams programmatically | [docs/mcp-extras-setup.md](docs/mcp-extras-setup.md) |
 | **Pinecone** | Semantic vector search across your knowledge base | [docs/mcp-extras-setup.md](docs/mcp-extras-setup.md) |
@@ -218,8 +212,8 @@ ai-chief-of-staff/
 ## Questions?
 
 - Ask Claude — it knows the system inside and out
-- Talk to Chris Serger — he built it and uses it every day
-- Full guide with architecture and demo: ask Chris for the link
+- File an issue on this repo
+- See the [wiki](../../wiki) for extended guides and architecture
 
 ---
 

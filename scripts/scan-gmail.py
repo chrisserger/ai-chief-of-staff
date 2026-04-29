@@ -175,14 +175,15 @@ def classify(msg, config):
     # Direct emails — from a real person whose body mentions org/products/people keywords
     direct = rules.get("direct_emails", {})
     keywords = direct.get("keywords", [])
-    # If it's not from a known corporate sender AND body mentions a keyword → direct
-    if from_addr and "@salesforce.com" in from_addr and not any(
+    home_domain = config.get("home_domain", "")
+    # If it's from the home domain and not a known system sender → likely a real human
+    if from_addr and home_domain and f"@{home_domain}" in from_addr and not any(
         corp in from_addr for corp in [
             "employeecomms", "myworkday", "employeesuccess",
             "noreply", "no-reply", "okta", "notifications", "donotreply"
         ]
     ):
-        # This is someone at Salesforce writing to Chris — likely a real human
+        # This is someone at the home domain — likely a real human
         body_lower = (_extract_body(msg.get("payload", {})) or "").lower()
         if any(kw.lower() in body_lower or kw.lower() in subject_lower for kw in keywords):
             return "direct_emails", from_addr, subject

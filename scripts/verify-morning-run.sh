@@ -45,13 +45,12 @@ fi
 if [ ! -f "$LOG_FILE" ]; then
     FAILURES+=("Log file missing: $LOG_FILE")
 else
-    # Primary signal: the most recent FINAL_CHECKPOINT line for TODAY's date.
-    # Not tied to header-block matching — manual runs may not emit the header
-    # to the log file but will still emit FINAL_CHECKPOINT.
-    FINAL_LINE=$(grep -E "^FINAL_CHECKPOINT date=${TODAY} " "$LOG_FILE" | tail -1)
+    # Primary signal: PHASE_2C_COMPLETE (from the Phase 2 split architecture)
+    # or FINAL_CHECKPOINT (from legacy monolithic Phase 2). Accept either.
+    FINAL_LINE=$(grep -E "^(FINAL_CHECKPOINT|PHASE_2C_COMPLETE) date=${TODAY}" "$LOG_FILE" | tail -1)
 
     if [ -z "$FINAL_LINE" ]; then
-        FAILURES+=("Missing FINAL_CHECKPOINT for ${TODAY} — Phase 2 did not complete all steps")
+        FAILURES+=("Missing PHASE_2C_COMPLETE for ${TODAY} — Phase 2c did not finish writing the daily note")
     else
         # Parse FINAL_CHECKPOINT fields and apply sanity checks
         CLAUDIA=$(echo "$FINAL_LINE" | grep -oE "claudia=[0-9]+" | cut -d= -f2)

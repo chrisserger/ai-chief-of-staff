@@ -5,6 +5,19 @@
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `scripts/session-brief.sh` | Session start situational awareness | Auto-runs via SessionStart hook |
+| `scripts/run-morning-routine.sh` | Full morning routine orchestrator (Phase 0–3) | `bash scripts/run-morning-routine.sh` or via launchd |
+| `scripts/phase2a-scans.sh` | Phase 2a: emoji flags + outbound msgs + email scans | Called by run-morning-routine.sh |
+| `scripts/phase2b-active-board.sh` | Phase 2b: Active Board Canvas cleanup | Called by run-morning-routine.sh |
+| `scripts/phase2c-daily-note.sh` | Phase 2c: Daily note brief writer (with cross-reference gate) | Called by run-morning-routine.sh |
+| `scripts/verify-morning-run.sh` | Phase 3: Validate morning routine output, red-banner on failure | Called by run-morning-routine.sh |
+| `scripts/scan-claudia-flags.sh` | Re-run just the Claudia emoji scan (backfill) | `bash scripts/scan-claudia-flags.sh` |
+| `scripts/scan-yesterdays-activity.sh` | Re-scan your Slack activity from yesterday (backfill) | `bash scripts/scan-yesterdays-activity.sh` |
+| `scripts/scan-email.sh` | Refresh Gmail scan (backfill) | `bash scripts/scan-email.sh` |
+| `scripts/scan-gmail.py` | Deterministic Gmail fetch → structured JSON | `python3 scripts/scan-gmail.py [--lookback 1d] [--json-only]` |
+| `scripts/wait-for-network.sh` | Wait for network before morning routine | Called by run-morning-routine.sh |
+| `scripts/archive-daily-notes.sh` | Archive daily notes >7 days old to monthly subfolders | `bash scripts/archive-daily-notes.sh` |
+| `scripts/memory-sweep.sh` | Health check for Claude memory files (stale entries, broken refs) | `bash scripts/memory-sweep.sh` |
+| `scripts/weekly-review.py` | Generate weekly review from daily notes | `python3 scripts/weekly-review.py [--week YYYY-Wxx] [--dry-run]` |
 | `scripts/audit-entities.py` | Find stale/missing entity files | Direct run |
 | `scripts/import-granola.py` | Import meeting transcripts to daily notes | `python3 scripts/import-granola.py [--date YYYY-MM-DD]` |
 
@@ -19,7 +32,7 @@ MCP servers extend what Claude can do. Add them with `claude mcp add`. See `docs
 ### Slack MCP (Core — set up first)
 
 **Transport:** HTTP to `https://mcp.slack.com/mcp` | OAuth via `~/.claude.json`
-**Setup guide:** [docs/slack-mcp-setup.md](docs/slack-mcp-setup.md) | Canvas `F09A59TJF08`
+**Setup guide:** [docs/slack-mcp-setup.md](docs/slack-mcp-setup.md)
 
 **What Claude can do with Slack:**
 - Read messages from any channel you're in
@@ -35,7 +48,7 @@ MCP servers extend what Claude can do. Add them with `claude mcp add`. See `docs
 |------|--------|
 | **Canvas ID** | `{{ACTIVE_BOARD_CANVAS_ID}}` |
 | **Purpose** | Interactive to-do list — single source of truth for commitments |
-| **Sections** | This Week, People/Team, Operations, Deals/Accounts, Strategic/Longer Term, Waiting On |
+| **Sections** | People/Team, Operations, Deals/Accounts, Skills/Learning, Strategic/Longer Term, Waiting On |
 | **Item format** | `- [ ] Action — by DUE_DATE \| Source: MEETING, DATE` |
 
 **Timestamp rule:** ALWAYS calculate Unix timestamps before Slack queries. Never guess.
@@ -141,7 +154,7 @@ date -j -f "%Y-%m-%d %H:%M:%S %z" "2026-04-13 17:00:00 -0400" "+%s"
 
 ## Google Workspace API (Phase 2)
 
-**Setup guide:** [docs/google-workspace-setup.md](docs/google-workspace-setup.md) | Canvas `F0ASP7X0S5R`
+**Setup guide:** [docs/google-workspace-setup.md](docs/google-workspace-setup.md)
 **Auth:** Application Default Credentials (ADC) via `gcloud auth application-default login`
 
 | Service | What You Can Do |
@@ -151,7 +164,7 @@ date -j -f "%Y-%m-%d %H:%M:%S %z" "2026-04-13 17:00:00 -0400" "+%s"
 | Drive | List, search, share files |
 | Docs | Create, read, edit documents |
 | Sheets | Create, read, edit spreadsheets |
-| Slides | Create presentations from Salesforce corporate template |
+| Slides | Create presentations from templates |
 
 *Configure after you're comfortable with the base system.*
 

@@ -62,6 +62,6 @@ You are running headlessly. One job: scan for flagged Slack messages since ${SIN
 Emit this exact line as your final output: CHECKPOINT step=claudia_emoji flags_found=N flags_processed=N routed_to_kb=N commits_added=N
 PROMPT_END
 
-# Model name: Salesforce Bedrock default. Override in your terminal with a
-# different --model flag if running outside Salesforce.
-claude --print --dangerously-skip-permissions --model us.anthropic.claude-opus-4-7 --max-turns 30 -p "$(cat "$PROMPT_FILE")"
+CLAUDE_MODEL="${CLAUDE_MODEL:-claude-sonnet-4-6}"
+
+claude --print --dangerously-skip-permissions --model "$CLAUDE_MODEL" --max-turns 30 -p "$(cat "$PROMPT_FILE")" </dev/null

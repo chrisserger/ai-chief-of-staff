@@ -3,6 +3,7 @@
 
   "description": "Gmail scan config. Defines what to surface, what to skip, and how to route email content.",
   "gmail_user": "<your-email>@<your-domain>",
+  "home_domain": "<your-domain>",
   "python_path": "/usr/bin/python3",
   "api_method": "Google ADC (Application Default Credentials)",
   "credentials_path": "~/.config/gcloud/application_default_credentials.json",

@@ -50,7 +50,7 @@ Check if Granola is installed by looking for the cache file: `~/Library/Applicat
 ### Step 7: Create Active Board
 Ask: "Do you have a Slack Canvas you use as a to-do list? If not, I'll create one for you."
 - If they have one: get the Canvas ID and wire it into CLAUDE.md and TOOLS.md
-- If not: create a new Canvas via `slack_create_canvas` with sections: This Week, People/Team, Operations, Deals/Accounts, Strategic/Longer Term, Waiting On
+- If not: create a new Canvas via `slack_create_canvas` with sections: People/Team, Operations, Deals/Accounts, Skills/Learning, Strategic/Longer Term, Waiting On
 
 ### Step 8: Generate first daily note
 Create today's daily note in `daily/YYYY-MM-DD.md` using the template. If calendar data is available, populate the schedule. If not, just create the structure.
@@ -163,13 +163,27 @@ If the session starts mid-day and the daily note already has the verify marker A
 **Authority:** Search all context sources, generate prep briefs, update daily note and customer files
 **Trigger:** Daily at 6 AM local time weekdays (automated via launchd) OR {{USER_NAME}} says "run morning routine"
 **Approval gate:** None
-**Requires:** This runs in two phases — Phase 1 is always available; Phase 2 requires Claude CLI + Slack/Gmail integrations
+**Requires:** Phase 1 is always available; Phase 2 requires Claude CLI + Slack/Gmail integrations
 
-**How it works:** `scripts/run-morning-routine.sh` runs in two phases:
+**How it works:** `scripts/run-morning-routine.sh` runs in phases:
+- **Phase 0:** Wait for network (macOS launchd fires before wifi connects)
 - **Phase 1 (bash/python):** Granola sync, daily note creation, calendar, contact tracking, entity audit, (Gmail scan if configured)
-- **Phase 2 (Claude CLI, headless):** Scans all sources, then writes an EA-quality daily brief to `daily/YYYY-MM-DD.md`. Sources: Slack channels + DMs (from `slack-monitor.json`), Gmail (from `email-monitor.json`), Claudia emoji flags, yesterday's carryover. Routes flagged items to KB files.
+- **Phase 1.5:** Compute Friday nudge flags (memory staleness check)
+- **Phase 2 (Claude CLI, headless) — split into 3 focused sub-scripts:**
+  - **Phase 2a** (`scripts/phase2a-scans.sh`): Claudia emoji flags + user outbound message scan + email scan. Each scan has its own kill timer. Writes to Active Board and entity files ONLY — never touches the daily note.
+  - **Phase 2b** (`scripts/phase2b-active-board.sh`): Active Board Canvas cleanup — removes checked/completed items, deduplicates.
+  - **Phase 2c** (`scripts/phase2c-daily-note.sh`): Writes the EA-quality daily brief to `daily/YYYY-MM-DD.md`. Reads Active Board Canvas, Granola meetings, and yesterday's daily note as cross-reference sources BEFORE writing anything.
+- **Phase 3:** Verification (`scripts/verify-morning-run.sh`)
 
-Phase 2 executes 8 numbered steps and emits a CHECKPOINT line after each, plus a FINAL_CHECKPOINT summary line. A verification script (see next Program) then validates all checkpoints landed and the daily note has the required sections.
+**Phase 2 split rationale:** A single monolithic Claude CLI prompt timed out, confused scan work with daily-note work, and re-surfaced resolved items. Splitting into scan → cleanup → write gives each step a focused budget and clear separation of concerns.
+
+**Cross-Reference Gate (Phase 2c — CRITICAL):**
+Before writing ANY fire, action item, or cascade item, Phase 2c must verify:
+1. Is it on the Active Board Canvas RIGHT NOW as an unchecked item? If NO → do not write it.
+2. Did the user have a Granola meeting yesterday with the person involved? If YES → check if the Active Board item still exists. If it was removed, the meeting resolved it.
+3. Does yesterday's daily note show this was completed? If YES → do not write it.
+
+This gate prevents stale fires from reappearing after they've been resolved via meetings, Slack messages, or manual board cleanup.
 
 **Daily note quality rules (Phase 2 output):**
 - **Fires come from the Active Board Canvas only.** Read Canvas first. If {{USER_NAME}} checked something off or deleted it, it's dead — never re-add it.
@@ -218,20 +232,29 @@ The banner tells {{USER_NAME}} which one to run.
 **The Active Board is {{USER_NAME}}'s to-do list.** Single source of truth for open commitments. If {{USER_NAME}} checks it off or deletes it, it's done — never re-add it from any other source.
 
 **Sync cycle (every session):**
+0. **Pre-flight (scan outbound messages FIRST):** Before adding ANY item, search for {{USER_NAME}}'s own recent Slack messages. If {{USER_NAME}} already handled it, scheduled it, or resolved it in a message — do NOT add it. This catches what {{USER_NAME}} already did and prevents stale items.
 1. Read Canvas via `slack_read_canvas`
 2. Find checked items (`[x]`) → remove them (they're done)
 3. Note any items deleted (not checked, just gone) → also done
-4. Append new commitments from this session
+4. Append new commitments from this session to the appropriate Canvas section
 
 **Item format:** `- [ ] Action description — by DUE_DATE | Source: MEETING/SLACK, DATE`
 **Waiting format:** `- **Person** — what they owe | since DATE`
 
-**Sections:** This Week, People/Team, Operations, Deals/Accounts, Strategic/Longer Term, Waiting On
+**Section structure — function-bucketed, NOT date-scoped:**
+Sections: People/Team, Operations, Deals/Accounts, Strategic/Longer Term, Waiting On.
+**Never create date-scoped headers** like "This Week (Apr 28–May 2)" on the Canvas. Items are grouped by function, not by time. If you see date headers, remove them.
 
 ### Program: Slack Monitoring
 **Authority:** Read channels and DMs, extract commitments, update Active Board and daily note
 **Trigger:** Morning routine, debrief, on-demand
 **Approval gate:** None for reading. Always ask before sending messages.
+
+**Scan behavior:**
+- **{{USER_NAME}}'s outbound messages (MANDATORY, runs FIRST):** Search for {{USER_NAME}}'s own recent messages and paginate through ALL results. This catches what {{USER_NAME}} already handled, commitments made in DMs, and status changes on existing items. Cross-reference against Active Board BEFORE adding anything new.
+- **Automated (morning routine):** Configured channels + key DMs. Writes synthesized intel to daily note.
+- **Debrief (conversational):** Cross-reference channels with what {{USER_NAME}} reported. Catch gaps. Triggered by {{USER_NAME}} saying "debrief."
+- **Interactive:** Any channel or DM on demand when {{USER_NAME}} asks.
 
 **Channels to monitor:**
 {{SLACK_CHANNELS_LIST}}
@@ -287,6 +310,53 @@ The banner tells {{USER_NAME}} which one to run.
 4. If the flagged post has substantive reference content that doesn't fit an existing file (e.g. multi-paragraph process kickoff), create or append to a KB file (`team/playbooks/`, `team/planning/`, etc.) and link from the one-liner.
 
 **Never paste the original post content into the daily note.** Timelines, bullet lists, tables — those belong in the KB file, not the brief.
+
+### Program: Employee Agent / AI Meeting Notes Ingest
+**Authority:** Read AI-generated meeting notes DM, extract commitments, route decisions/intel, write to daily note
+**Trigger:** Morning routine (automated) + on-demand
+**Approval gate:** None
+
+**Why this matters:** If {{USER_NAME}} uses a meeting notes AI agent (e.g. Gemini, Otter, Fireflies) that posts summaries to a Slack DM, those summaries may be the ONLY source of intel for meetings {{USER_NAME}} couldn't attend in person. Granola only captures meetings the user sat in on.
+
+**Steps:**
+1. Read last 24h of the configured AI notes DM via `slack_read_channel`
+2. Parse each post for: meeting title, date, attendees, summary, decisions, action items
+3. **Dedupe check:** If a matching Granola meeting exists and {{USER_NAME}} attended, prefer Granola for content fidelity — but still scan the AI agent's decisions list for action items the user's notes might have missed
+4. Route per normal rules: commitments → Active Board, entity intel → customer/deal/people files
+5. Summarize for daily note: one bullet per meeting with title and 1-line takeaway
+
+**Extract:**
+- Agreed decisions (action items with named owners)
+- Hiring / headcount decisions
+- Pipeline / forecast changes
+- Product or GTM strategy shifts
+- Competitive signals, risks, blockers
+
+**Skip:** Rating/feedback meta-content, full transcript bodies (link to them), pure announce-style meetings with no decisions.
+
+### Program: 1:1 Prep
+**Authority:** Read person's profile, recent daily notes, past 1:1 notes, Active Board items — generate prep doc
+**Trigger:** {{USER_NAME}} says "prep me for my 1:1 with [name]" OR morning routine detects a 1:1 on today's calendar
+**Approval gate:** None
+
+**Steps:**
+1. Read the person's profile from `people/` (personality framework, working style, recent context)
+2. Read their 1:1 running log (`people/directs/<name>-1on1s.md`) for open commitments and last session topics
+3. Check Active Board for items involving this person
+4. Check recent daily notes for mentions
+5. Generate a prep section with: open items from last time, topics to raise, personality-aware delivery notes, energy read
+
+### Program: Personality Profile Maintenance (Monthly, optional)
+**Authority:** Read meeting transcripts, update personality profiles in people files
+**Trigger:** First Monday of each month (automated) or on-demand ("refresh personality profiles")
+**Approval gate:** Framework-assessment changes (DISC/MBTI/Working Genius) flagged for review, not auto-applied
+
+**Steps:**
+1. For each maintained person: scan last 30 days of Granola transcripts + recent daily notes for behavioral signals
+2. APPEND new examples to "How to Influence" and "Chris ↔ X Dynamic" sections — do not delete existing content
+3. Update `*Last updated*` only on profiles that were actually modified
+4. Flag low-confidence profiles for manual observation
+5. Reference: `resources/personality-framework-guide.md` for framework definitions (if created)
 
 ### Program: Weekly Review (Friday)
 **Authority:** Compile wins/challenges/patterns, update Active Board, create review file

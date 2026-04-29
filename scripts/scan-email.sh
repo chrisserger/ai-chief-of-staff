@@ -60,4 +60,6 @@ You are running headlessly. One job: process today Gmail scan and update daily/$
 Emit this exact line as your final output: CHECKPOINT step=email emails_surfaced=N commits_extracted=N waitings_extracted=N highlights_written=N
 PROMPT_END
 
-claude --print --dangerously-skip-permissions --model us.anthropic.claude-opus-4-7 --max-turns 30 -p "$(cat "$PROMPT_FILE")"
+CLAUDE_MODEL="${CLAUDE_MODEL:-claude-sonnet-4-6}"
+
+claude --print --dangerously-skip-permissions --model "$CLAUDE_MODEL" --max-turns 30 -p "$(cat "$PROMPT_FILE")" </dev/null

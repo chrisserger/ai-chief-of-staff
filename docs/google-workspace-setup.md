@@ -2,15 +2,15 @@
 
 This guide walks you through setting up Google Workspace access so Claude can read your Gmail, Calendar, Drive, Docs, Sheets, and Slides — and, depending on the path you choose, draft emails, edit docs, and create slide decks too.
 
-**Two options.** Option 1 is recommended if you're a Salesforce employee. Option 2 works for everyone else and also for headless automation (cron jobs) where an interactive Claude Code session isn't available.
+**Two options.** Option 1 is recommended if your company provides a Google Workspace MCP plugin. Option 2 works for everyone and is also needed for headless automation (cron jobs) where an interactive Claude Code session isn't available.
 
 You can use both. The morning routine uses Option 2 for the deterministic Phase 1 Gmail fetch, and interactive sessions can use whichever is configured.
 
 ---
 
-## Option 1 (recommended for Salesforce employees): Google Workspace MCP
+## Option 1 (recommended if your company offers a Google Workspace MCP): Google Workspace MCP
 
-The Salesforce AI Stack Marketplace publishes an officially security-approved Google Workspace MCP plugin — 70+ tools across Gmail, Calendar, Drive, Docs, Sheets, and Slides, with **read + write** support. Single OAuth flow via the MCP Gateway. This supersedes the ADC/Python approach for most interactive work.
+If your company provides a Google Workspace MCP plugin (many large orgs do — check your internal AI tools marketplace), it gives you 70+ tools across Gmail, Calendar, Drive, Docs, Sheets, and Slides with **read + write** support. Single OAuth flow. This supersedes the ADC/Python approach for most interactive work.
 
 **What it unlocks:**
 - Gmail: search, read, send, manage labels and filters
@@ -22,9 +22,9 @@ The Salesforce AI Stack Marketplace publishes an officially security-approved Go
 
 ### Install
 
-1. Make sure the Salesforce AI Stack Marketplace is installed (internal doc: `docs.internal.salesforce.com/ai/aihub/ai-marketplace/getting-started/`)
-2. Add the Google Workspace plugin/MCP from the marketplace. Short URL: `https://www.sfdc.co/official-google-mcp`
-3. Authenticate in your terminal:
+1. Find the Google Workspace MCP plugin in your company's AI tools marketplace or MCP registry.
+2. Install the plugin following your company's instructions.
+3. Authenticate in your terminal (example — your command may differ):
    ```bash
    ~/.mcp-adaptor/bin/mcp-adaptor auth --provider google-workspace-rw --env prod
    ```
@@ -37,17 +37,13 @@ The Salesforce AI Stack Marketplace publishes an officially security-approved Go
 
 ### Gotcha
 
-If you get `fatal: could not read Username for git.soma.salesforce.com` during install, your local git.soma SSH key isn't set up. Fix that first, then retry the plugin install.
-
-### Internal Slack reference
-
-Newton Wong's announcement of this plugin: [post in #ai-builder-community-mcp](https://salesforce-internal.slack.com/archives/C09BGJDQPAR/p1777014918275559) — good source of truth for the latest capability list and any install updates.
+If authentication fails, check that your corporate SSO / OAuth is configured correctly for MCP plugins. Consult your company's AI tools documentation.
 
 ---
 
-## Option 2 (non-Salesforce users / headless automation): Python + Google ADC
+## Option 2 (everyone / headless automation): Python + Google ADC
 
-> **Salesforce employees:** You do NOT need this for interactive work. The Google Workspace MCP (Option 1 above) handles Gmail, Calendar, Drive, Docs, Sheets, and Slides without any Google Cloud project setup. Option 2 is only needed if you want to run the automated morning routine's Phase 1 Gmail scan (headless cron job), or if you're not at Salesforce.
+> **If you have Option 1 working:** You do NOT need this for interactive work. The Google Workspace MCP handles Gmail, Calendar, Drive, Docs, Sheets, and Slides without any Google Cloud project setup. Option 2 is only needed if you want to run the automated morning routine's Phase 1 Gmail scan (headless cron job), or if Option 1 isn't available at your company.
 
 Uses Google Application Default Credentials and a small Python wrapper (`scripts/scan-gmail.py`) that reads `email-monitor.json` at the repo root.
 
@@ -135,9 +131,9 @@ Should print a JSON block with `total_fetched`, `total_surfaced`, and a `message
 - **Phase 1** of `scripts/run-morning-routine.sh` is deterministic (bash/python) and calls `scripts/scan-gmail.py` directly — **Option 2 (ADC) is required for Phase 1.** It produces `logs/gmail-scan-YYYY-MM-DD.json` that Phase 2 then reads.
 - **Phase 2** is the Claude CLI run. If you have Option 1 installed, Claude can additionally use the MCP tools for interactive write operations (drafting replies, managing labels, creating docs/slides). If you only have Option 2 configured, Phase 2 just reads the JSON Phase 1 wrote.
 
-**Recommendation for Salesforce employees:** Start with Option 1 only — it covers all interactive work. Add Option 2 later only if you set up the automated morning routine (Phase 1 needs headless Python access to Gmail).
+**If your company offers a Google Workspace MCP (Option 1):** Start there — it covers all interactive work. Add Option 2 later only if you set up the automated morning routine (Phase 1 needs headless Python access to Gmail).
 
-**Recommendation for everyone else:** Option 2 is your path. Everything the morning routine does works with it.
+**If not:** Option 2 is your path. Everything the morning routine does works with it.
 
 ---
 
